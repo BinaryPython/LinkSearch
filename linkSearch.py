@@ -4,21 +4,22 @@ import os
 import os.path
 
 
-def firefoxLinkSearch(regex):
+def firefoxLinkSearch(regex,urlArray=[]):
     """
-    Retrieves links from Firefox's history matching the provided regex
+    Retrieves links from Firefox's history matching the provided regex. Does check for
+    duplicates as it assembles the final list. If you have an existing list that you want
+    the function to check for duplicates in and append it's results to, add it in the 
+    urlArray argument
 
     *** Requires ***
     regex - A regular expression the returned URLs should match
+    urlArray - A list of already existing URLs for the function to use
+    for duplicate control
 
-    Returns a list of matching URLs
+    *** Returns a list of matching URLs ***
     """
-    search_urls = []
 
-    # These are just two different ways to get the same path; basically they both
-    # evaluate the directory that the Windows constant %APPDATA% should map to
-    #
-    # firefoxDataDir = os.path.expandvars(r"%APPDATA%\Mozilla\Firefox\Profiles")
+    # !!! Need a solution for UNIX systems, instead of just Windows systems
     firefoxDataDir = os.getenv('APPDATA') + r"\Mozilla\Firefox\Profiles"
     profileFolders = os.listdir(firefoxDataDir)
 
@@ -31,17 +32,17 @@ def firefoxLinkSearch(regex):
         for row in cursor.execute("SELECT url from moz_places"):
             curURL = row[0]
 
-            if re.match(regex,curURL) and curURL not in search_urls:
-                search_urls.append(curURL)
+            if re.match(regex,curURL) and curURL not in urlArray:
+                urlArray.append(curURL)
             #end if
         #end for
 
         conn.close()
     #end for
 
-    return search_urls
+    return urlArray
 #end def
 
 if __name__ == "__main__":
-    firefoxLinkSearch("https?://(www.)?reddit.com")
+    print( firefoxLinkSearch("https?://(www.)?reddit.com") )
 #end def
