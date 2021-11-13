@@ -11,10 +11,15 @@ def firefoxLinkSearch(regex,urlArray=[]):
     the function to check for duplicates in and append it's results to, add it in the 
     urlArray argument
 
-    *** Requires ***
-    regex - A regular expression the returned URLs should match
-    urlArray - A list of already existing URLs for the function to use
-    for duplicate control
+        Requires
+            regex(string) - A regular expression the returned URLs should match
+            
+            urlArray(array) - A list of already existing URLs for the function to use
+            for duplicate control; defaults to an empty array
+
+        Returns
+            urlArray(array) - A list of URLs that is extracted from the Firefox bookmarks
+            and history (plus any additional urls passed in via the urlArray argument)
 
     *** Returns a list of matching URLs ***
     """
@@ -43,6 +48,64 @@ def firefoxLinkSearch(regex,urlArray=[]):
     return urlArray
 #end def
 
+def ircLogFilesLinkSearch(log_folder,regex,urlArray=[]):
+    """
+    Searches through a folder of downloaded IRC log files (.txt files) for 
+    links matching a certain regex
+
+        Requires
+            log_folder - A folder full of .txt files containing downloaded IRC logs
+
+            regex - A regular expression the returned URLs should match
+            
+            urlArray - A list of already existing URLs for the function to use
+            for duplicate control
+
+        Returns
+            urlArray (array) - A list of URLs that is extracted from the provided
+            IRC logs (plus any additional urls passed in via the urlArray argument)
+
+
+    """
+    file_list = os.listdir(log_folder)
+
+    for file in file_list:
+        curFile = os.path.join(log_folder,file)
+
+        if os.path.isfile(curFile):
+            file_text = open(curFile,'r',encoding="utf-8")
+            index = 0
+
+            for line in file_text:
+                # (FUTURE FEATURE???) automatically add [^ \n]+ to the end of the provided regex?
+                # This will search for all links in between lines of other tet (???)
+                searchIndex = re.search(regex,line) 
+
+                if searchIndex:
+                    found_url = line[searchIndex.start():searchIndex.end()]
+
+                    if found_url not in urlArray:
+                        urlArray.append(found_url)
+                    #endif
+                index+=1
+            #end for
+
+            # break;
+        #endif
+
+    #end for
+
+    return urlArray
+
+#end def
+
 if __name__ == "__main__":
-    print( firefoxLinkSearch("https?://(www.)?reddit.com") )
+    # Get Reddit URLs from Firefox
+    reddit_urls = firefoxLinkSearch("https?://(www.)?reddit.com")
+
+    # Get Reddit URLs from IRC Logs
+    ircLogFolder = os.getenv("USERPROFILE") + r"\Desktop\irc_logs"
+    reddit_urls = ircLogFilesLinkSearch(ircLogFolder,"https?://(www.)?reddit.com[^ \n]+",reddit_urls)
+
+    print(reddit_urls)
 #end def
