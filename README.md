@@ -18,7 +18,7 @@ An indication of what future items are in store for this script/library
 
 
 ### IRC Search
-- [ ] Search for links through downloaded IRC Logs
+- [x] Search for links through downloaded IRC Logs
 - [ ] Search for links through logs of locally downloaded IRC Clients
 - [ ] Use API Connections to popular IRC Clients and use that to download and parse logs
 
