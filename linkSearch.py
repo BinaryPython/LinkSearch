@@ -23,7 +23,6 @@ def firefoxLinkSearch(regex,urlArray=[]):
 
     *** Returns a list of matching URLs ***
     """
-
     # !!! Need a solution for UNIX systems, instead of just Windows systems
     firefoxDataDir = os.getenv('APPDATA') + r"\Mozilla\Firefox\Profiles"
     profileFolders = os.listdir(firefoxDataDir)
@@ -45,8 +44,55 @@ def firefoxLinkSearch(regex,urlArray=[]):
         conn.close()
     #end for
 
+    # The database has the URLs in oldest to newest order. I wanted newest to oldest,
+    # so we reverse it for that purpose
+    urlArray.reverse()
+
     return urlArray
 #end def
+
+
+def chromeLinkSearch(regex,urlArray=[]):
+    """
+    Retrieves links from Google Chrome's history matching the provided regex. Does check 
+    for duplicates as it assembles the final list. If you have an existing list that you 
+    want the function to check for duplicates in and append it's results to, add it in the 
+    urlArray argument
+
+        Requires
+            regex(string) - A regular expression the returned URLs should match
+            
+            urlArray(array) - A list of already existing URLs for the function to use
+            for duplicate control; defaults to an empty array
+
+        Returns
+            urlArray(array) - A list of URLs that is extracted from the Chrome bookmarks
+            and history (plus any additional urls passed in via the urlArray argument)
+
+    *** Returns a list of matching URLs ***
+    """
+    chromeHistoryFile = os.getenv("LocalAppData") + r"\Google\Chrome\User Data\Default\History"
+
+    conn = sql.connect(chromeHistoryFile)
+    cursor = conn.cursor()
+
+    for row in cursor.execute("SELECT * from urls"):
+        curURL = row[1]
+
+        if re.match(regex,curURL) and curURL not in urlArray:
+            urlArray.append(curURL)
+        #endif
+    #end for
+
+    conn.close()
+
+    # The database has the URLs in oldest to newest order. I wanted newest to oldest,
+    # so we reverse it for that purpose
+    urlArray.reverse()
+
+    return urlArray
+#end def
+
 
 def ircLogFilesLinkSearch(log_folder,regex,urlArray=[]):
     """
@@ -64,8 +110,6 @@ def ircLogFilesLinkSearch(log_folder,regex,urlArray=[]):
         Returns
             urlArray (array) - A list of URLs that is extracted from the provided
             IRC logs (plus any additional urls passed in via the urlArray argument)
-
-
     """
     file_list = os.listdir(log_folder)
 
@@ -95,17 +139,24 @@ def ircLogFilesLinkSearch(log_folder,regex,urlArray=[]):
 
     #end for
 
+    # We actually collect the URLs from oldest to newest, and we want the array in
+    # the reverse order (nwewest to oldest), so we reverse that array!
+    urlArray.reverse()
+
     return urlArray
 
 #end def
 
 if __name__ == "__main__":
-    # Get Reddit URLs from Firefox
-    reddit_urls = firefoxLinkSearch("https?://(www.)?reddit.com")
+    # # Get Reddit URLs from Firefox
+    # reddit_urls = firefoxLinkSearch("https?://(www.)?reddit.com")
 
-    # Get Reddit URLs from IRC Logs
-    ircLogFolder = os.getenv("USERPROFILE") + r"\Desktop\irc_logs"
-    reddit_urls = ircLogFilesLinkSearch(ircLogFolder,"https?://(www.)?reddit.com[^ \n]+",reddit_urls)
+    # # Get Reddit URLs from IRC Logs
+    # ircLogFolder = os.getenv("USERPROFILE") + r"\Desktop\irc_logs"
+    # reddit_urls = ircLogFilesLinkSearch(ircLogFolder,"https?://(www.)?reddit.com[^ \n]+",reddit_urls)
 
-    print(reddit_urls)
+    # print(reddit_urls)
+
+    ytURLS = chromeLinkSearch("https?://(www.)?youtube.com")
+    print(ytURLS)
 #end def
