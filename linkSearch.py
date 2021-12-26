@@ -2,6 +2,10 @@ import sqlite3 as sql
 import re
 import os
 import os.path
+import random
+import urllib.request as urlreq
+import urllib.error as urlerr
+import time
 
 
 def firefoxLinkSearch(regex,urlArray=[]):
@@ -11,15 +15,15 @@ def firefoxLinkSearch(regex,urlArray=[]):
     the function to check for duplicates in and append it's results to, add it in the 
     urlArray argument
 
-        Requires
-            regex(string) - A regular expression the returned URLs should match
-            
-            urlArray(array) - A list of already existing URLs for the function to use
-            for duplicate control; defaults to an empty array
+    Requires
+        regex(string) - A regular expression the returned URLs should match
+        
+        urlArray(array) - A list of already existing URLs for the function to use
+        for duplicate control; defaults to an empty array
 
-        Returns
-            urlArray(array) - A list of URLs that is extracted from the Firefox bookmarks
-            and history (plus any additional urls passed in via the urlArray argument)
+    Returns
+        urlArray(array) - A list of URLs that is extracted from the Firefox bookmarks
+        and history (plus any additional urls passed in via the urlArray argument)
 
     *** Returns a list of matching URLs ***
     """
@@ -58,18 +62,14 @@ def chromeLinkSearch(regex,urlArray=[]):
     for duplicates as it assembles the final list. If you have an existing list that you 
     want the function to check for duplicates in and append it's results to, add it in the 
     urlArray argument
-
-        Requires
-            regex(string) - A regular expression the returned URLs should match
-            
-            urlArray(array) - A list of already existing URLs for the function to use
-            for duplicate control; defaults to an empty array
-
-        Returns
-            urlArray(array) - A list of URLs that is extracted from the Chrome bookmarks
-            and history (plus any additional urls passed in via the urlArray argument)
-
-    *** Returns a list of matching URLs ***
+    Requires
+        regex(string) - A regular expression the returned URLs should match
+        
+        urlArray(array) - A list of already existing URLs for the function to use
+        for duplicate control; defaults to an empty array
+    Returns
+        urlArray(array) - A list of URLs that is extracted from the Chrome bookmarks
+        and history (plus any additional urls passed in via the urlArray argument)
     """
     chromeHistoryFile = os.getenv("LocalAppData") + r"\Google\Chrome\User Data\Default\History"
 
@@ -93,23 +93,58 @@ def chromeLinkSearch(regex,urlArray=[]):
     return urlArray
 #end def
 
+def intExplorerLinkSearch(regex,urlArray=[]):
+    """
+    Retrieves links from Internet Explorer's history matching the provided regex. Checks 
+    for duplicates as it assembles the final list. If you have an existing list that you 
+    want the function to check for duplicates in and append it's results to, add it in the 
+    urlArray argument.
+    Requires
+        regex(string) - A regular expression the returned URLs should match
+        
+        urlArray(array) - A list of already existing URLs for the function to use
+        for duplicate control; defaults to an empty array
+    Returns
+        urlArray(array) - A list of URLs that is extracted from the Chrome bookmarks
+        and history (plus any additional urls passed in via the urlArray argument)
+    """
+    ieHistoryFile = os.getenv("LocalAppData") + r"\Microsoft\Edge\User Data\Default\History"
+
+    conn = sql.connect(ieHistoryFile)
+    cursor = conn.cursor()
+
+    for row in cursor.execute("SELECT * FROM urls"):
+        curURL = row[1]
+
+        if re.match(regex,curURL) and curURL not in urlArray:
+            urlArray.append(curURL)
+        #end if
+    #end for
+
+    conn.close()
+
+    # The database has the URLs in oldest to newest order. I wanted newest to oldest,
+    # so we reverse it for that purpose
+    urlArray.reverse()
+
+    return urlArray
+#end def
+
 
 def ircLogFilesLinkSearch(log_folder,regex,urlArray=[]):
     """
     Searches through a folder of downloaded IRC log files (.txt files) for 
     links matching a certain regex
+    Requires
+        log_folder - A folder full of .txt files containing downloaded IRC logs
 
-        Requires
-            log_folder - A folder full of .txt files containing downloaded IRC logs
-
-            regex - A regular expression the returned URLs should match
-            
-            urlArray - A list of already existing URLs for the function to use
-            for duplicate control
-
-        Returns
-            urlArray (array) - A list of URLs that is extracted from the provided
-            IRC logs (plus any additional urls passed in via the urlArray argument)
+        regex - A regular expression the returned URLs should match
+        
+        urlArray - A list of already existing URLs for the function to use
+        for duplicate control
+    Returns
+        urlArray (array) - A list of URLs that is extracted from the provided
+        IRC logs (plus any additional urls passed in via the urlArray argument)
     """
     file_list = os.listdir(log_folder)
 
@@ -144,8 +179,55 @@ def ircLogFilesLinkSearch(log_folder,regex,urlArray=[]):
     urlArray.reverse()
 
     return urlArray
-
 #end def
+
+    
+###############################
+# Just some utility functions #
+###############################
+def randomURL(urlArray):
+    """
+    Simply chooses a random URL from the provided array of URLs and returns it
+    Requires
+        urlArray - The Array of URLs
+    Returns
+        randomURL - The URL that was chosen
+    """
+    randomURL = random.choice(urlArray)
+    return randomURL
+#end def
+
+def testURL(url):
+    """
+    Tests a URL to see if this URL still exists and doesn't send us to a 404 page
+    Requires
+        url - The URL to test
+    Returns
+        A boolean indicating whether the URL is valid or not
+    """
+
+    # Let's add a User Agent so it appears like we are coming from a browser and
+    # not from a script
+    userAgent = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.3; rv:36.0)"
+                 + "Gecko/20100101 Firefox/36.0"}
+
+    try:
+        req = urlreq.Request(url,data=None,headers=userAgent)
+        urlObject = urlreq.urlopen(req)
+        
+        if urlObject.getcode() == 200:
+            return True
+        else:
+            return False
+    except urlerr.HTTPError:
+        return False
+    except urlerr.URLError:
+        return False
+    #end try
+#end def
+
+
+
 
 if __name__ == "__main__":
     # # Get Reddit URLs from Firefox
@@ -157,6 +239,8 @@ if __name__ == "__main__":
 
     # print(reddit_urls)
 
-    ytURLS = chromeLinkSearch("https?://(www.)?youtube.com")
-    print(ytURLS)
+    # ytURLS = chromeLinkSearch("https?://(www.)?youtube.com")
+    # print(ytURLS)
+
+    urls = intExplorerLinkSearch("https?://(www.)?youtube.com")
 #end def

@@ -6,21 +6,20 @@ An indication of what future items are in store for this script/library
 
 ### Browser Search
 - [ ] Must work on following browsers and operating systems
-    - [ ] Windows
+    - [x] Windows
         - [x] Firefox
-        - [ ] Google Chrome
-        - [ ] Internet Explorer
+        - [x] Google Chrome
+        - [x] Internet Explorer (Edge)
     - [ ] Linux
         - [ ] Firefox
         - [ ] Google Chrome
-- [ ] Must iterate through all browser profiles
 - [ ] Must fail as gracefully as possible if sqllite file doesn't exist or is unreadable
 
 
 ### IRC Search
 - [x] Search for links through downloaded IRC Logs
 - [ ] Search for links through logs of locally downloaded IRC Clients
-- [ ] Use API Connections to popular IRC Clients and use that to download and parse logs
+- [ ] Use API Connections to popular IRC Clients and use that to download and parse logs (?)
 
 
 ### Future Expansion (?)
